@@ -20,6 +20,16 @@ def train(cfg: _Config, model_name, experiment_name="", log_dir="./logs", debug=
 
     print("Parameters")
     cfg.print_params()
+    cfg.dataloader_module = "deepsvg.svg_dataset"
+    cfg.data_dir = "./dataset/svgs_simplified/"
+    cfg.meta_filepath = "./dataset/svg_meta.csv"
+    cfg.pretrained_path = "./logos/hierarchical_ordered.pth.tar"
+    cfg.learning_rate = 0.0001
+    cfg.num_epochs = 50
+    cfg.ckpt_every = 10
+    print("Reloaded=====================================================")
+    cfg.print_params()
+
 
     print("Loading dataset")
     dataset_load_function = importlib.import_module(cfg.dataloader_module).load_dataset
