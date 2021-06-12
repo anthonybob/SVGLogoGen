@@ -18,6 +18,7 @@ class SVGTensorDataset(torch.utils.data.Dataset):
     def __init__(self, data_dir, meta_filepath, model_args, max_num_groups, max_seq_len, max_total_len=None,
                  filter_uni=None, filter_platform=None, filter_category=None, train_ratio=1.0, df=None, PAD_VAL=-1):
         self.data_dir = data_dir
+        print("data_dir: " + data_dir)
 
         self.MAX_NUM_GROUPS = max_num_groups
         self.MAX_SEQ_LEN = max_seq_len
@@ -104,9 +105,15 @@ class SVGTensorDataset(torch.utils.data.Dataset):
         return self.df[self.df.id == str(id)].iloc[0]
 
     def _load_tensor(self, icon_id):
-        with open(os.path.join(self.data_dir, f"{icon_id}.pkl"), "rb") as f:
+        if(self.data_dir == "./dataset/svgs_simplified/"):
+          svg = SVG.load_svg(self.data_dir + icon_id + ".svg")
+          tensors = svg.copy().numericalize().to_tensor(concat_groups=False, PAD_VAL=-1)
+          fillings = svg.to_fillings()
+          return [tensors], fillings
+        else:
+          with open(os.path.join(self.data_dir, f"{icon_id}.pkl"), "rb") as f:
             data = pickle.load(f)
-        return data["tensors"], data["fillings"]
+          return data["tensors"], data["fillings"]
 
     def __len__(self):
         return len(self.df) * self.nb_augmentations
@@ -168,7 +175,6 @@ class SVGTensorDataset(torch.utils.data.Dataset):
             model_args = self.model_args
 
         pad_len = max(self.MAX_NUM_GROUPS - len(t_sep), 0)
-
         t_sep.extend([torch.empty(0, 14)] * pad_len)
         fillings.extend([0] * pad_len)
 
@@ -184,6 +190,9 @@ class SVGTensorDataset(torch.utils.data.Dataset):
             else:
                 arg_ = arg
                 t_list = t_sep
+            
+            for t in t_list:
+              print(t)
 
             if arg_ == "tensor":
                 res[arg] = t_list
@@ -228,6 +237,7 @@ class SVGFinetuneDataset(torch.utils.data.Dataset):
 
 
 def load_dataset(cfg: _Config):
+
     dataset = SVGTensorDataset(cfg.data_dir, cfg.meta_filepath, cfg.model_args, cfg.max_num_groups, cfg.max_seq_len, cfg.max_total_len,
                                cfg.filter_uni, cfg.filter_platform, cfg.filter_category, cfg.train_ratio)
     return dataset
